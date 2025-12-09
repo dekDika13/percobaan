@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MONEC - Receipt Print System</title>
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+    <style>
+        /* --- RESET & BACKGROUND --- */
+        body { 
+            margin: 0; padding: 0; 
+            font-family: Arial, Helvetica, sans-serif; 
+            display: flex; height: 100vh; overflow: hidden; 
+            background-color: #d1d1d1; 
+        }
+        
+        /* --- EDITOR PANEL (KANAN) --- */
+        .editor-panel {
+            width: 450px;
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: -5px 0 15px rgba(0,0,0,0.3);
+            display: flex; flex-direction: column; gap: 12px;
+            border-left: 1px solid #34495e;
+            z-index: 10;
+        }
+        .editor-panel h2 { 
+            margin: 15px 0 5px 0; font-size: 13px; color: #f39c12; 
+            border-bottom: 1px solid #7f8c8d; padding-bottom: 3px; 
+            text-transform: uppercase; letter-spacing: 1px; 
+        }
+        
+        /* Inputs */
+        .form-group { display: flex; flex-direction: column; gap: 2px; }
+        .form-group label { font-size: 11px; color: #bdc3c7; font-weight: bold; }
+        .form-group input, .form-group textarea, .form-group select {
+            padding: 8px; border: 1px solid #34495e; background: #34495e; 
+            color: white; border-radius: 3px; font-size: 12px;
+        }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: #3498db; background: #3e5871; }
+
+        /* Readonly Inputs (Perusahaan) */
+        .form-group input[readonly], .form-group textarea[readonly] {
+            background-color: #222f3e; color: #95a5a6; 
+            border-color: #2c3e50; cursor: not-allowed;
+        }
+
+        /* Item Row Inputs */
+        .item-row-input { 
+            display: flex; gap: 5px; margin-bottom: 5px; align-items: center; 
+            background: #3e5871; padding: 5px; border-radius: 3px; 
+        }
+        .item-row-input input.qty { width: 40px; text-align: center; }
+        .item-row-input input.curr { width: 50px; text-align: center; text-transform: uppercase; }
+        .item-row-input input.rate { flex: 1; text-align: right; }
+        .btn-remove { 
+            background: #c0392b; color: white; border: none; border-radius: 2px; 
+            cursor: pointer; padding: 5px; font-weight: bold; font-size: 10px; 
+        }
+        
+        /* Action Buttons */
+        .btn-action { 
+            background: #2980b9; color: white; border: none; padding: 10px; 
+            border-radius: 3px; cursor: pointer; width: 100%; margin-top: 5px; 
+            font-weight: bold; font-size: 12px; 
+        }
+        .btn-sig { background: #e67e22; }
+        .btn-print { 
+            background: #27ae60; padding: 12px; font-size: 16px; margin-bottom: 10px; 
+        }
+        .btn-print:hover { background: #2ecc71; }
+
+        /* --- POPUP MODAL TANDA TANGAN (FULL SCREEN) --- */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 2000;
+            justify-content: center; align-items: center; flex-direction: column;
+        }
+        .modal-content {
+            background: #fff; padding: 10px; border-radius: 5px;
+            width: 95vw; height: 90vh; 
+            display: flex; flex-direction: column;
+            text-align: center;
+        }
+        .canvas-wrapper {
+            flex: 1; position: relative;
+            background: #fff; border: 2px dashed #ccc;
+            margin: 10px 0; cursor: crosshair;
+        }
+        canvas#signature-pad {
+            width: 100%; height: 100%; display: block; touch-action: none;
+        }
+        .modal-actions { display: flex; gap: 20px; justify-content: center; padding-bottom: 10px; }
+        .btn-modal { padding: 15px 30px; font-weight: bold; font-size: 16px; cursor: pointer; border: none; border-radius: 5px; }
+        .btn-save { background: #27ae60; color: white; }
+        .btn-cancel { background: #7f8c8d; color: white; }
+        .btn-clear { background: #c0392b; color: white; }
+
+        /* --- PREVIEW AREA (KIRI) --- */
+        .preview-area {
+            flex: 1; padding: 40px; overflow-y: auto;
+            display: flex; justify-content: center; align-items: flex-start;
+        }
+
+        .paper {
+            background: white;
+            width: 380px; /* Lebar standar thermal 80mm */
+            padding: 20px 25px; 
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            font-family: Arial, Helvetica, sans-serif;
+            color: #333; 
+            min-height: 600px; /* Agar terlihat panjang seperti di foto */
+            position: relative;
+        }
+
+        /* --- TYPOGRAPHY (PERSIS FOTO ASLI) --- */
+        p { margin: 0; padding: 0; line-height: 1.35; }
+        
+        /* 1. Header */
+        .header-section { text-align: center; margin-bottom: 15px; }
+        .pt-name { font-size: 16px; font-weight: 700; color: #444; margin-bottom: 2px; }
+        .pt-sub { font-size: 11px; font-style: italic; color: #555; }
+        .pt-info { font-size: 11px; font-style: italic; color: #555; line-height: 1.4; }
+
+        /* 2. Info Transaksi */
+        .trx-section { margin-top: 15px; text-align: left; margin-bottom: 10px; }
+        .trx-type { font-size: 11px; font-weight: 700; color: #555; margin-bottom: 2px; text-transform: uppercase; }
+        .trx-detail { font-size: 11px; color: #444; margin-bottom: 1px; }
+
+        /* 3. Items */
+        .items-section { margin-top: 10px; }
+        .items-label { font-size: 13px; color: #444; margin-bottom: 2px; }
+        
+        .items-list-wrapper {
+            border-bottom: 1px solid #999; 
+            padding-bottom: 5px; margin-bottom: 5px;
+        }
+        .item-row {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            font-size: 13px; color: #444; padding: 2px 0;
+        }
+        .item-desc { text-align: left; }
+        .item-price { text-align: right; white-space: nowrap; }
+
+        .total-row {
+            display: flex; justify-content: flex-end; margin-bottom: 20px;
+        }
+        .total-val { font-size: 13px; font-weight: 700; text-align: right; color: #333; }
+
+        /* 4. Customer & Signature - DIPERBESAR */
+        .cust-section { text-align: center; margin-top: 10px; }
+        .sig-label { font-size: 10px; margin-bottom: 10px; color: #555; }
+        
+        .sig-container {
+            width: 100%; 
+            /* Jarak & Ukuran Diperbesar Sesuai Request */
+            min-height: 150px; 
+            padding: 10px 0;
+            margin-bottom: 15px; 
+            display: flex; justify-content: center; align-items: center;
+        }
+        /* CSS KHUSUS TANDA TANGAN BESAR */
+        .sig-img { 
+            max-height: 200px; /* Diperbesar dari 80px ke 200px */
+            width: auto; 
+            max-width: 90%; 
+        }
+        
+        .cust-name { font-size: 13px; font-weight: 400; margin-bottom: 5px; color: #222; text-transform: uppercase; }
+        .cust-detail-box { text-align: center; line-height: 1.4; }
+        .cust-line { font-size: 10px; color: #444; }
+        .cust-line i { font-style: italic; }
+
+        /* 5. Footer */
+        .footer { 
+            margin-top: 25px; 
+            font-size: 10px; 
+            text-align: center; 
+            line-height: 1.3;
+            color: #555;
+        }
+
+        /* --- LOGIN PAGE STYLES --- */
+        #login-page {
+            background-color: #f0f2f5; display: flex; justify-content: center; align-items: center;
+            height: 100%; width: 100%; position: fixed; z-index: 9999;
+        }
+        .fb-content { display: flex; align-items: center; justify-content: space-between; width: 980px; max-width: 95%; }
+        .fb-left { width: 58%; padding-right: 32px; }
+        .fb-logo { color: #1877f2; font-size: 60px; font-weight: bold; letter-spacing: -3px; margin-bottom: 10px; }
+        .fb-tagline { font-size: 28px; line-height: 32px; font-weight: normal; color: #1c1e21; }
+        .fb-right { width: 396px; display: flex; flex-direction: column; align-items: center; }
+        .fb-card { background-color: #fff; border: none; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,.1), 0 8px 16px rgba(0,0,0,.1); padding: 20px; width: 100%; text-align: center; }
+        .fb-input { width: 100%; padding: 14px 16px; font-size: 17px; border: 1px solid #dddfe2; border-radius: 6px; margin-bottom: 12px; outline: none; }
+        .fb-btn-login { background-color: #1877f2; border: none; border-radius: 6px; font-size: 20px; line-height: 48px; width: 100%; color: #fff; font-weight: bold; cursor: pointer; }
+        .error-msg { color: red; font-size: 13px; margin-bottom: 10px; display: none; text-align: left; }
+
+        /* --- PRINT MODE --- */
+        @media print {
+            body { background: white; height: auto; overflow: visible; display: block; }
+            #login-page, .editor-panel, .modal-overlay { display: none !important; }
+            #main-app { display: block !important; }
+            .preview-area { padding: 0; display: block; height: auto; margin: 0; }
+            .paper { box-shadow: none; width: 100%; max-width: 100%; padding: 0; margin: 0; border: none; }
+            @page { margin: 0; size: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="login-page">
+        <div class="fb-content">
+            <div class="fb-left">
+                <div class="fb-logo">facebook</div>
+                <div class="fb-tagline">Connect with friends and the world around you on Facebook.</div>
+            </div>
+            <div class="fb-right">
+                <div class="fb-card">
+                    <form onsubmit="handleLogin(event)">
+                        <div class="error-msg" id="error-msg">Email atau kata sandi yang Anda masukkan salah.</div>
+                        <input type="text" id="email" class="fb-input" placeholder="Email or Phone Number" required>
+                        <input type="password" id="password" class="fb-input" placeholder="Password" required>
+                        <button type="submit" class="fb-btn-login">Log In</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-app" style="display:none; height: 100vh;">
+        
+        <div class="modal-overlay" id="sigModal">
+            <div class="modal-content">
+                <h2 style="margin:0; color:#333;">Silakan Tanda Tangan</h2>
+                <div class="canvas-wrapper">
+                    <canvas id="signature-pad"></canvas>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-modal btn-cancel" onclick="closeModal()">BATAL</button>
+                    <button class="btn-modal btn-clear" onclick="clearPad()">HAPUS</button>
+                    <button class="btn-modal btn-save" onclick="saveSignature()">SIMPAN</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="preview-area">
+            <div class="paper" id="receipt">
+                <div class="header-section">
+                    <div class="pt-name" id="out-pt-name">PM2V</div>
+                    <div class="pt-sub" id="out-pt-sub">PT. PERDANA MULIA MASRUR VALASINDO (SINGARAJA)</div>
+                    <div class="pt-info" id="out-pt-addr">JL. SERIRIT - SINGARAJA, BR DINAS BUNUT PANGGANG, KALIASEM, LOVINA - SINGARAJA</div>
+                    <div class="pt-info">Telp. <i id="out-pt-phone">(0362)3391486</i></div>
+                </div>
+                <div class="trx-section">
+                    <div class="trx-type" id="out-trx-type">PEMBELIAN</div>
+                    <div class="trx-detail" id="out-trx-id">BL-2025.12.08-0020-BR007</div>
+                    <div class="trx-detail" id="out-trx-date"></div> 
+                    <div class="trx-detail">CS: <span id="out-cs">eka lovina</span></div>
+                </div>
+                <div class="items-section">
+                    <div class="items-label">ITEMS</div>
+                    <div class="items-list-wrapper" id="items-container"></div>
+                    <div class="total-row">
+                        <div class="total-val" id="out-total">0</div>
+                    </div>
+                </div>
+                <div class="cust-section">
+                    <div class="sig-label">customer signature</div>
+                    
+                    <div class="sig-container">
+                        <img id="out-sig-img" class="sig-img" src="" style="display:none;">
+                    </div>
+                    
+                    <div class="cust-name" id="out-cust-name">Mr. KETUT BUDI DARSANA</div>
+                    <div class="cust-detail-box">
+                        <div class="cust-line">Email. <i id="out-cust-email">17/12/1996</i></div>
+                        <div class="cust-line">Pekerj. <i id="out-cust-job">Swasta</i></div>
+                        <div class="cust-line">Telp. <i id="out-cust-phone">TANGGUWISIA</i></div>
+                        <div class="cust-line">Alamat. <i id="out-cust-addr">DESA TANGGUWISIA</i></div>
+                        <div class="cust-line">Kewrgn. <i id="out-cust-nation">INDONESIA</i></div>
+                        <div class="cust-line">ID. <i id="out-cust-id">KTP - 5108021712960001</i></div>
+                    </div>
+                </div>
+                <div class="footer">
+                    THANK YOU FOR TRANSACTION WITH PM2V MONEY CHANGER. PLEASE CHECK YOUR CASH AND TRANSACTION BEFORE LEAVING. FOR ANY QUERY OR COMPLAINT, PLEASE CONTACT +62-361-474-1441/ +62-821-4444-3095 OR EMAIL perdanamuliaamc@gmail.com
+                </div>
+            </div>
+        </div>
+
+        <div class="editor-panel">
+            <button class="btn-print btn-action" onclick="window.print()">🖨️ PRINT SEKARANG</button>
+
+            <h2>Perusahaan (Read-Only)</h2>
+            <div class="form-group"><label>Nama Singkat</label><input type="text" id="in-pt-name" value="PM2V" readonly></div>
+            <div class="form-group"><label>Nama Lengkap</label><input type="text" id="in-pt-sub" value="PT. PERDANA MULIA MASRUR VALASINDO (SINGARAJA)" readonly></div>
+            <div class="form-group"><label>Alamat</label><textarea id="in-pt-addr" rows="2" readonly>JL. SERIRIT - SINGARAJA, BR DINAS BUNUT PANGGANG, KALIASEM, LOVINA - SINGARAJA</textarea></div>
+            <div class="form-group"><label>Telepon</label><input type="text" id="in-pt-phone" value="(0362)3391486" readonly></div>
+
+            <h2>Transaksi</h2>
+            <div class="form-group"><label>Tipe</label>
+                <select id="in-trx-type">
+                    <option value="PEMBELIAN">PEMBELIAN</option>
+                    <option value="PENJUALAN">PENJUALAN</option>
+                </select>
+            </div>
+            <div class="form-group"><label>No. Transaksi</label><input type="text" id="in-trx-id" value="BL-2025.12.08-0020-BR007"></div>
+            <div class="form-group"><label>Tanggal (Auto)</label><input type="text" id="in-trx-date" placeholder="YYYY-MM-DD HH:MM:SS"></div>
+            <div class="form-group"><label>Customer Service</label>
+                <select id="in-cs">
+                    <option value="eka lovina">eka lovina</option>
+                    <option value="Alit">Alit</option>
+                    <option value="Ahmad">Ahmad</option>
+                </select>
+            </div>
+
+            <h2>Items</h2>
+            <div style="font-size: 10px; color:#bdc3c7; margin-bottom:5px;">Isi Rate tanpa koma (misal: 10650)</div>
+            <div id="editor-items-list"></div>
+            <button class="btn-action btn-add" onclick="addItem()">+ Tambah Item</button>
+            <div class="form-group" style="margin-top: 10px;">
+                <label>Total (Auto Hitung)</label>
+                <input type="text" id="in-total" readonly style="background: #2c3e50; border:none; font-weight:bold; color:#f1c40f; font-size: 16px; text-align: right;">
+            </div>
+
+            <h2>Pelanggan</h2>
+            <button class="btn-action btn-sig" onclick="openModal()">✍️ ISI TANDA TANGAN (POPUP)</button>
+            <div class="form-group" style="margin-top:10px;"><label>Nama</label><input type="text" id="in-cust-name" value="Mr. KETUT BUDI DARSANA"></div>
+            <div class="form-group"><label>Email / Tgl</label><input type="text" id="in-cust-email" value="17/12/1996"></div>
+            <div class="form-group"><label>Pekerjaan</label><input type="text" id="in-cust-job" value="Swasta"></div>
+            <div class="form-group"><label>Telepon</label><input type="text" id="in-cust-phone" value="TANGGUWISIA"></div>
+            <div class="form-group"><label>Alamat</label><input type="text" id="in-cust-addr" value="DESA TANGGUWISIA"></div>
+            <div class="form-group"><label>Kewarganegaraan</label><input type="text" id="in-cust-nation" value="INDONESIA"></div>
+            <div class="form-group"><label>ID No.</label><input type="text" id="in-cust-id" value="KTP - 5108021712960001"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- LOGIN LOGIC ---
+        function handleLogin(e) {
+            e.preventDefault();
+            const u = document.getElementById('email').value;
+            const p = document.getElementById('password').value;
+            if (u === "pertama@gmail.com" && p === "rahasia") {
+                document.getElementById('login-page').style.display = 'none';
+                document.getElementById('main-app').style.display = 'flex';
+                document.body.style.backgroundColor = "#d1d1d1";
+                updateDateTime();
+                setTimeout(resizeCanvas, 100);
+            } else {
+                document.getElementById('error-msg').style.display = 'block';
+            }
+        }
+
+        // --- EDITOR LOGIC ---
+        function updateDateTime() {
+            const now = new Date();
+            const formatted = now.getFullYear() + "-" +
+                String(now.getMonth()+1).padStart(2, '0') + "-" +
+                String(now.getDate()).padStart(2, '0') + " " +
+                String(now.getHours()).padStart(2, '0') + ":" +
+                String(now.getMinutes()).padStart(2, '0') + ":" +
+                String(now.getSeconds()).padStart(2, '0');
+            
+            const input = document.getElementById('in-trx-date');
+            if(!input.value) {
+                input.value = formatted;
+                document.getElementById('out-trx-date').innerText = formatted;
+            }
+        }
+
+        function bind(inputId, outId) {
+            const input = document.getElementById(inputId);
+            const output = document.getElementById(outId);
+            if(input && output) {
+                const type = input.tagName === 'SELECT' ? 'change' : 'input';
+                input.addEventListener(type, () => output.innerText = input.value);
+                output.innerText = input.value;
+            }
+        }
+        const ids = [
+            ['in-pt-name','out-pt-name'],['in-pt-sub','out-pt-sub'],['in-pt-addr','out-pt-addr'],['in-pt-phone','out-pt-phone'],
+            ['in-trx-type','out-trx-type'],['in-trx-id','out-trx-id'],['in-trx-date','out-trx-date'],['in-cs','out-cs'],
+            ['in-cust-name','out-cust-name'],['in-cust-email','out-cust-email'],['in-cust-job','out-cust-job'],
+            ['in-cust-phone','out-cust-phone'],['in-cust-addr','out-cust-addr'],['in-cust-nation','out-cust-nation'],['in-cust-id','out-cust-id']
+        ];
+        ids.forEach(f => bind(f[0], f[1]));
+
+        // --- SIGNATURE LOGIC ---
+        const modal = document.getElementById('sigModal');
+        const canvas = document.getElementById('signature-pad');
+        let signaturePad;
+
+        function resizeCanvas() {
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            canvas.width = canvas.offsetWidth * ratio;
+            canvas.height = canvas.offsetHeight * ratio;
+            canvas.getContext("2d").scale(ratio, ratio);
+        }
+
+        function openModal() {
+            modal.style.display = 'flex';
+            if (!signaturePad) {
+                signaturePad = new SignaturePad(canvas, { backgroundColor: 'rgb(255, 255, 255)', penColor: 'rgb(0,0,0)' });
+                window.addEventListener("resize", resizeCanvas);
+                setTimeout(resizeCanvas, 50); 
+            } else {
+                resizeCanvas();
+                signaturePad.clear();
+            }
+        }
+        function closeModal() { modal.style.display = 'none'; }
+        function clearPad() { if(signaturePad) signaturePad.clear(); }
+        function saveSignature() {
+            if (!signaturePad.isEmpty()) {
+                const img = document.getElementById('out-sig-img');
+                img.src = signaturePad.toDataURL();
+                img.style.display = 'block';
+                closeModal();
+            }
+        }
+
+        // --- ITEM LOGIC ---
+        let items = [ { qty: "20", curr: "AUD", rate: "10650" } ];
+
+        function formatRate(n) { return parseFloat(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+        function formatTotal(n) { return parseFloat(n).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }); }
+        function cleanNumber(s) { return parseFloat(s.replace(/[^0-9.]/g, '')) || 0; }
+
+        function renderItems() {
+            const editor = document.getElementById('editor-items-list');
+            const container = document.getElementById('items-container');
+            editor.innerHTML = ''; container.innerHTML = '';
+            let grandTotal = 0;
+
+            items.forEach((item, idx) => {
+                const q = cleanNumber(item.qty); const r = cleanNumber(item.rate);
+                const sub = q * r;
+                grandTotal += sub;
+
+                // Preview
+                const row = document.createElement('div');
+                row.className = 'item-row';
+                row.innerHTML = `<div class="item-desc">${item.qty} ${item.curr} @ ${formatRate(r)}</div><div class="item-price">${formatTotal(sub)}</div>`;
+                container.appendChild(row);
+
+                // Input
+                const div = document.createElement('div');
+                div.className = 'item-row-input';
+                div.innerHTML = `
+                    <input class="qty" value="${item.qty}" oninput="updItem(${idx}, 'qty', this.value)">
+                    <input class="curr" value="${item.curr}" oninput="updItem(${idx}, 'curr', this.value)">
+                    <span style="color:#aaa; font-size:10px;">@</span>
+                    <input class="rate" value="${item.rate}" oninput="updItem(${idx}, 'rate', this.value)">
+                    <button class="btn-remove" onclick="delItem(${idx})">X</button>
+                `;
+                editor.appendChild(div);
+            });
+
+            const ft = formatTotal(grandTotal);
+            document.getElementById('out-total').innerText = ft;
+            document.getElementById('in-total').value = ft;
+        }
+
+        function addItem() { items.push({ qty: "1", curr: "USD", rate: "0" }); renderItems(); }
+        function delItem(i) { items.splice(i, 1); renderItems(); }
+        function updItem(i, k, v) {
+            items[i][k] = v;
+            const row = document.getElementById('items-container').children[i];
+            if(row) {
+                const itm = items[i];
+                const sub = cleanNumber(itm.qty) * cleanNumber(itm.rate);
+                row.querySelector('.item-desc').innerText = `${itm.qty} ${itm.curr} @ ${formatRate(cleanNumber(itm.rate))}`;
+                row.querySelector('.item-price').innerText = formatTotal(sub);
+                
+                let tot = 0; items.forEach(x => tot += cleanNumber(x.qty)*cleanNumber(x.rate));
+                const fTot = formatTotal(tot);
+                document.getElementById('out-total').innerText = fTot;
+                document.getElementById('in-total').value = fTot;
+            }
+        }
+
+        renderItems();
+    </script>
+</body>
+</html>
