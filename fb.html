@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facebook</title>
+    <link rel="icon" href="https://img.icons8.com/?size=100&id=114441&format=png&color=000000" type="image/png">
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+    <style>
+        /* ========================
+           RESET & GLOBAL STYLES
+           ======================== */
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            background-color: #555;
+            display: flex;
+        }
+
+        /* ========================
+           BAGIAN 1: LOGIN FACEBOOK
+           ======================== */
+        #login-page {
+            display: flex;	    
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            width: 100%;
+            position: fixed;
+            z-index: 9999;
+            background-color: #f0f2f5;
+        }
+
+        .fb-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 980px;
+            max-width: 95%;
+        }
+
+        .fb-left {
+            width: 58%;
+            padding-right: 32px;
+        }
+
+        .fb-logo {
+            color: #1877f2;
+            font-size: 60px;
+            font-weight: bold;
+            letter-spacing: -3px;
+            margin-bottom: 10px;
+        }
+
+        .fb-tagline {
+            font-size: 28px;
+            line-height: 32px;
+            font-weight: normal;
+            color: #1c1e21;
+        }
+
+        .fb-right {
+            width: 396px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .fb-card {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, .1), 0 8px 16px rgba(0, 0, 0, .1);
+            padding: 20px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .fb-input {
+            width: 100%;
+            padding: 14px 16px;
+            font-size: 17px;
+            border: 1px solid #dddfe2;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            outline: none;
+        }
+
+        .fb-input:focus {
+            border-color: #1877f2;
+            box-shadow: 0 0 0 2px #e7f3ff;
+        }
+
+        .fb-btn-login {
+            background-color: #1877f2;
+            border: none;
+            border-radius: 6px;
+            font-size: 20px;
+            line-height: 48px;
+            padding: 0 16px;
+            width: 100%;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .fb-btn-login:hover {
+            background-color: #166fe5;
+        }
+
+        .fb-link {
+            color: #1877f2;
+            font-size: 14px;
+            text-decoration: none;
+            margin-top: 16px;
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+
+        .fb-divider {
+            border-bottom: 1px solid #dadde1;
+            margin-bottom: 20px;
+        }
+
+        .fb-btn-new {
+            background-color: #42b72a;
+            border: none;
+            border-radius: 6px;
+            font-size: 17px;
+            line-height: 48px;
+            padding: 0 16px;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            width: auto;
+            display: inline-block;
+        }
+
+        .error-msg {
+            color: red;
+            font-size: 13px;
+            margin-bottom: 10px;
+            display: none;
+            text-align: left;
+        }
+
+        /* ========================
+           BAGIAN 2: APLIKASI NOTA
+           ======================== */
+        #main-app {
+            display: none;
+            width: 100%;
+            height: 100%;
+        }
+
+        .preview-area {
+            flex: 1;
+	    padding: 0 10px 0 10px
+            overflow-y: auto;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            background-color: #555;
+        }
+
+        /* --- KERTAS NOTA --- */
+        .paper {
+            background: white;
+            width: 310px;
+            /* Margin Atas Besar */
+            padding-top: 50px;
+            padding-left: 20px;
+            /* Padding sisi dikurangi agar area teks lebih lebar */
+            padding-right: 20px;
+            padding-bottom: 40px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            font-family: Arial, Helvetica, sans-serif;
+            color: #222;
+            min-height: 600px;
+            position: relative;
+        }
+
+        p {
+            margin: 0;
+            padding: 0;
+            line-height: 1.35;
+        }
+
+        /* 1. Header (Updated Layout) */
+        .header-section {
+
+            text-align: center;
+            
+	    margin-top: 1em;
+            width: 100%;
+	    
+        }
+
+        .pt-name {
+            font-size: 18px;
+            font-weight: 700;
+	    fpadding:0;
+            margin:0;
+            font-family:Arial, Helvetica, sans-serif;
+            color: ;
+            margin-bottom:;
+	    padding: 0 10px 0 10px
+        }
+
+        .pt-sub {
+            font-size: 12px;
+            font-style: italic;
+	    padding:0; 
+            margin:0;
+            font-family:Arial, Helvetica, sans-serif;
+            color: ;
+        }
+
+        /* ALAMAT: Rata Kiri-Kanan (Justify) tapi baris terakhir tengah */
+        .pt-info {
+            font-size: 12px;
+            font-style: italic;
+            padding:0; 
+            margin:0;
+            font-family:Arial, Helvetica, sans-serif;
+            //line-height: 1.4;         
+            text-align: center;            
+	    padding: 0 7px 0 7px;
+        }
+	#o_telp{
+	   font-style:normal;
+	}
+
+        /* 2. Info Transaksi */
+        .trx-section {
+            font-size:12px;
+	    
+	    font-family:Arial, Helvetica, sans-serif;
+ 	    margin-top: 1em;
+            text-align: left;
+            margin-bottom: 10px;
+	    padding: 0 8px 0 8px;
+        }
+
+        .trx-type {
+	    font-weight:700;padding:0; 
+	    margin:0.3em 0 0.3em 0;
+            font-size: 12px;
+            font-weight: 700;
+	    margin-top: 20px;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .trx-detail {
+            font-size: 12px;
+            //margin-bottom: 2px;
+        }
+
+        /* 3. Items */
+        .items-section {
+            
+	padding: 0 8px 0 8px;
+        }
+
+        .items-label {
+	    font-weight: 500;
+            font-size: 14px;
+            
+            text-transform: uppercase;
+        }
+
+        .items-list-wrapper {
+            
+            
+        }
+
+        .item-row {
+            display: flex;
+            flex-direction: column; 
+            align-items: flex-end;
+            font-size: 14px;
+            
+        }
+
+        .item-desc {
+             width: 100%;
+             text-align: left;
+        }
+
+        .item-price {
+            text-align: right;
+	    
+            width: 100%;
+	    border-bottom: 0.5px solid rgba(0,0,0,0.4);
+            
+        }
+
+        .total-row {
+             display: flex;
+             justify-content: flex-end;
+    
+        }
+
+        .total-val {
+            font-size: 14px;
+            font-weight: 700;
+            text-align: right;
+            color: #222;
+        }
+
+        /* 4. Customer & Signature */
+        .cust-section {
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .sig-label {
+            font-size: 11px;
+            margin-bottom: 5px;
+            margin-top: 15px;
+        }
+
+        .sig-container {
+            width: 100%;
+            min-height: 160px;
+            padding: 10px 0;
+        
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .sig-img {
+            max-height: 360px;
+            max-width: 100%;
+        }
+
+        .cust-name {
+            font-size: 12px;
+            font-weight: 700;
+            
+            
+            text-transform: uppercase;
+        }
+
+        .cust-detail-box {
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .cust-line {
+            font-size: 10px;
+            
+        }
+
+        .cust-line i {
+            font-style: italic;
+        }
+
+        /* 5. Footer (Updated Layout) */
+        .footer {
+            /* margin-top: 10px;  */
+            font-size: 12px;
+           
+            
+            /* Garis putus-putus halus di atas footer */
+            
+            /* TEKNIK RATA KIRI-KANAN (JUSTIFY) TAPI TENGAH */
+            /* Rata kanan kiri */
+            text-align: center;
+	    padding: 0 10px 0 10px
+        }
+
+        /* --- EDITOR PANEL (KANAN) --- */
+        .editor-panel {
+            width: 450px;
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: -5px 0 15px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            border-left: 1px solid #34495e;
+            z-index: 10;
+        }
+
+        .editor-panel h2 {
+            margin: 15px 0 5px 0;
+            font-size: 13px;
+            color: #f39c12;
+            border-bottom: 1px solid #7f8c8d;
+            padding-bottom: 3px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .form-group label {
+            font-size: 11px;
+            color: #bdc3c7;
+            font-weight: bold;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            padding: 8px;
+            border: 1px solid #34495e;
+            background: #34495e;
+            color: white;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #3498db;
+            background: #3e5871;
+        }
+
+        .form-group input[readonly],
+        .form-group textarea[readonly] {
+            background-color: #222;
+            color: #7f8c8d;
+            cursor: not-allowed;
+            border-color: #222;
+        }
+
+        .item-row-input {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+            background: #3e5871;
+            padding: 6px;
+            border-radius: 4px;
+            margin-bottom: 5px;
+        }
+
+        .item-row-input input.qty {
+            width: 50px;
+            text-align: center;
+        }
+
+        .item-row-input input.curr {
+            width: 60px;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        .item-row-input input.rate {
+            flex: 1;
+            text-align: right;
+        }
+
+        .btn-remove {
+            background: #c0392b;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            padding: 6px;
+            font-weight: bold;
+            font-size: 10px;
+        }
+
+        .btn-action {
+            background: #2980b9;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 5px;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .btn-sig {
+            background: #e67e22;
+            margin-top: 10px;
+        }
+
+        .btn-print {
+            background: #27ae60;
+            padding: 15px;
+            font-size: 16px;
+            margin-bottom: 10px;
+            transition: 0.2s;
+        }
+
+        .btn-print:hover {
+            background: #2ecc71;
+        }
+
+        /* --- POPUP --- */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .modal-content {
+            background: white;
+            width: 95%;
+            height: 90%;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .canvas-wrapper {
+            flex: 1;
+            position: relative;
+            background: #fff;
+            border: 2px dashed #ccc;
+            margin: 10px 0;
+            cursor: crosshair;
+        }
+
+        canvas#signature-pad {
+            width: 100%;
+            height: 100%;
+            display: block;
+            touch-action: none;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            padding: 10px;
+        }
+
+        .btn-modal {
+            padding: 15px 30px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .btn-cancel {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .btn-clear {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-save {
+            background: #27ae60;
+            color: white;
+        }
+
+        /* --- PRINT --- */
+        @media print {
+            body {
+                background: white;
+                height: auto;
+                overflow: visible;
+                display: block;
+            }
+
+            #login-page,
+            .editor-panel,
+            .modal-overlay {
+                display: none !important;
+            }
+
+            #main-app {
+                display: block !important;
+            }
+
+            .preview-area {
+                padding: 0;
+                margin: 0;
+                display: block;
+                height: auto;
+                background: white;
+            }
+
+            .paper {
+                box-shadow: none;
+                width: 100%;
+                max-width: 100%;
+                padding: 0;
+                margin: 0;
+                border: none;
+                min-height: auto;
+            }
+
+            @page {
+                margin: 0;
+                size: auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="login-page">
+        <div class="fb-content">
+            <div class="fb-left">
+                <div class="fb-logo">facebook</div>
+                <div class="fb-tagline">Connect with friends and the world around you on Facebook.</div>
+            </div>
+            <div class="fb-right">
+                <div class="fb-card">
+                    <form onsubmit="handleLogin(event)">
+                        <div class="error-msg" id="error-msg">Email atau kata sandi yang Anda masukkan salah.</div>
+                        <input type="text" id="email" class="fb-input" placeholder="Email or Phone Number" required>
+                        <input type="password" id="password" class="fb-input" placeholder="Password" required>
+                        <button type="submit" class="fb-btn-login">Log In</button>
+                        <a href="#" class="fb-link">Forgot password?</a>
+                        <div class="fb-divider"></div>
+                        <button type="button" class="fb-btn-new">Create new account</button>
+                    </form>
+                </div>
+                <div style="margin-top:20px; font-size:14px;"><a href="#"
+                        style="text-decoration:none;font-weight:bold;color:#000;">Create a Page</a> for a celebrity,
+                    brand or business.</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-app">
+        <div class="modal-overlay" id="sigModal">
+            <div class="modal-content">
+                <h3 style="margin:0; color:#444;">Silakan Tanda Tangan (Layar Penuh)</h3>
+                <div class="canvas-wrapper">
+                    <canvas id="signature-pad"></canvas>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-modal btn-cancel" onclick="closeModal()">Batal</button>
+                    <button class="btn-modal btn-clear" onclick="clearPad()">Hapus</button>
+                    <button class="btn-modal btn-save" onclick="saveSignature()">SIMPAN KE NOTA</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="preview-area">
+            <div class="paper">
+                <div class="header-section">
+                    <div class="pt-name" id="out-pt-name">PM2V</div>
+                    <div class="pt-sub" id="out-pt-sub">PT. PERDANA MULIA MASRUR VALASINDO (SINGARAJA)</div>
+                    <div class="pt-info" style="width:100%;" id="out-pt-addr">JL. SERIRIT - SINGARAJA, BR DINAS BUNUT
+                        PANGGANG, KALIASEM, LOVINA - SINGARAJA</div>
+                    <div class="pt-info"><span id="o_telp">Telp. </span><i id="out-pt-phone">(0362)3391486</i></div>
+                </div>
+
+                <div class="trx-section">
+                    <div class="trx-type" id="out-trx-type">PEMBELIAN</div>
+                    <div class="trx-detail" id="out-trx-id">BL-2025.12.08-0020-BR007</div>
+                    <div class="trx-detail" id="out-trx-date"></div>
+                    <div class="trx-detail">CS: <span id="out-cs">nama</span></div>
+                </div>
+
+                <div class="items-section">
+                    <div class="items-label">ITEMS</div>
+                    <div class="items-list-wrapper" id="items-container"></div>
+                    <div class="total-row">
+                        <div class="total-val" id="out-total">0</div>
+                    </div>
+                </div>
+
+                <div class="cust-section">
+                    <div class="sig-label">customer signature</div>
+                    <div class="sig-container">
+                        <img id="out-sig-img" class="sig-img" src="" style="display:none;">
+                    </div>
+                    <div class="cust-name" id="out-cust-name">Mr. KETUT BUDI DARSANA</div>
+                    <div class="cust-detail-box">
+                        <div class="cust-line">Email. <i id="out-cust-email">17/12/1996</i></div>
+                        <div class="cust-line">Pekerj. <i id="out-cust-job">Swasta</i></div>
+                        <div class="cust-line">Telp. <i id="out-cust-phone">TANGGUWISIA</i></div>
+                        <div class="cust-line">Alamat. <i id="out-cust-addr">DESA TANGGUWISIA</i></div>
+                        <div class="cust-line">Kewrgn. <i id="out-cust-nation">INDONESIA</i></div>
+                        <div class="cust-line">ID. <i id="out-cust-id">KTP - 5108021712960001</i></div>
+                    </div>
+                </div>
+
+                <div class="footer">
+                    THANK YOU FOR TRANSACTION WITH PM2V MONEY CHANGER. PLEASE CHECK YOUR CASH AND TRANSACTION BEFORE
+                    LEAVING. FOR ANY QUERY OR COMPLAINT, PLEASE CONTACT +62-361-474-1441/ +62-821-4444-3095 OR EMAIL
+                    perdanamuliaamc@gmail.com
+                </div>
+            </div>
+        </div>
+
+        <div class="editor-panel">
+            <button class="btn-print btn-action" onclick="window.print()">🖨️ PRINT SEKARANG</button>
+
+            <h2>Perusahaan (Terkunci)</h2>
+            <div class="form-group"><label>Nama Singkat</label><input type="text" id="in-pt-name" value="PM2V" readonly>
+            </div>
+            <div class="form-group"><label>Nama Lengkap</label><input type="text" id="in-pt-sub"
+                    value="PT. PERDANA MULIA MASRUR VALASINDO (SINGARAJA)" readonly></div>
+            <div class="form-group"><label>Alamat</label><textarea id="in-pt-addr" rows="2"
+                    readonly>JL. SERIRIT - SINGARAJA, BR DINAS BUNUT PANGGANG, KALIASEM, LOVINA - SINGARAJA</textarea>
+            </div>
+            <div class="form-group"><label>Telepon</label><input type="text" id="in-pt-phone" value="(0362)3391486"
+                    readonly></div>
+
+            <h2>Transaksi</h2>
+            <div class="form-group"><label>Tipe</label>
+                <select id="in-trx-type">
+                    <option value="PEMBELIAN">PEMBELIAN</option>
+                    <option value="PENJUALAN">PENJUALAN</option>
+                </select>
+            </div>
+            <div class="form-group"><label>No. Transaksi (Auto Date)</label>
+                <input type="text" id="in-trx-id" value="">
+            </div>
+            <div class="form-group"><label>Tanggal (Auto)</label><input type="text" id="in-trx-date"
+                    placeholder="YYYY-MM-DD HH:MM:SS"></div>
+            <div class="form-group"><label>Customer Service</label>
+                <select id="in-cs">
+                    <option value="eka lovina">eka lovina</option>
+                    <option value="alit93">alit93</option>
+                    <option value="ahmad">ahmad</option>
+                </select>
+            </div>
+
+            <h2>Items</h2>
+            <div style="font-size:10px; color:#aaa; margin-bottom:5px;">Isi Rate tanpa koma (misal: 10650). Auto format
+                .00</div>
+            <div id="editor-items-list"></div>
+            <button class="btn-action" onclick="addItem()">+ Tambah Item</button>
+
+            <div class="form-group" style="margin-top:10px;">
+                <label>Total (Auto Hitung)</label>
+                <input type="text" id="in-total" readonly
+                    style="text-align:right; font-weight:bold; font-size:16px; color:#f1c40f; background:#222;">
+            </div>
+
+            <h2>Pelanggan</h2>
+            <button class="btn-action btn-sig" onclick="openModal()">✍️ BUAT TANDA TANGAN</button>
+            <div class="form-group" style="margin-top:10px;"><label>Nama</label><input type="text" id="in-cust-name"
+                    value="Mr. KETUT BUDI DARSANA"></div>
+            <div class="form-group"><label>Email / Tgl</label><input type="text" id="in-cust-email" value="17/12/1996">
+            </div>
+            <div class="form-group"><label>Pekerjaan</label><input type="text" id="in-cust-job" value="Swasta"></div>
+            <div class="form-group"><label>Telepon</label><input type="text" id="in-cust-phone" value="TANGGUWISIA">
+            </div>
+            <div class="form-group"><label>Alamat</label><input type="text" id="in-cust-addr" value="DESA TANGGUWISIA">
+            </div>
+            <div class="form-group"><label>Kewarganegaraan</label><input type="text" id="in-cust-nation"
+                    value="INDONESIA"></div>
+            <div class="form-group"><label>ID No.</label><input type="text" id="in-cust-id"
+                    value="KTP - 5108021712960001"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- LOGIC SYSTEM ---
+        function handleLogin(e) {
+            e.preventDefault();
+            const u = document.getElementById('email').value;
+            const p = document.getElementById('password').value;
+            if (u === "LULU123" && p === "12345678") {
+                document.getElementById('login-page').style.display = 'none';
+                document.getElementById('main-app').style.display = 'flex';
+                updateTime(); setTimeout(resizeCanvas, 200);
+            } else {
+                document.getElementById('error-msg').style.display = 'block';
+            }
+        }
+
+        // Binding
+        function bind(inputId, outId) {
+            const el = document.getElementById(inputId);
+            const target = document.getElementById(outId);
+            if (el && target) {
+                const evt = el.tagName === 'SELECT' ? 'change' : 'input';
+                el.addEventListener(evt, () => target.innerText = el.value);
+                target.innerText = el.value;
+            }
+        }
+        const bindings = [
+            ['in-pt-name', 'out-pt-name'], ['in-pt-sub', 'out-pt-sub'], ['in-pt-addr', 'out-pt-addr'], ['in-pt-phone', 'out-pt-phone'],
+            ['in-trx-type', 'out-trx-type'], ['in-trx-id', 'out-trx-id'], ['in-trx-date', 'out-trx-date'], ['in-cs', 'out-cs'],
+            ['in-cust-name', 'out-cust-name'], ['in-cust-email', 'out-cust-email'], ['in-cust-job', 'out-cust-job'],
+            ['in-cust-phone', 'out-cust-phone'], ['in-cust-addr', 'out-cust-addr'], ['in-cust-nation', 'out-cust-nation'], ['in-cust-id', 'out-cust-id']
+        ];
+        bindings.forEach(b => bind(b[0], b[1]));
+
+        //ID Transaksi Auto Generate
+        function updateTransactionID() {
+            const now = new Date();
+
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0'); // Bulan 0-11 jadi 1-12
+            const day = String(now.getDate()).padStart(2, '0');
+
+            // Format tanggal: 2025.12.09
+            const dateString = `${year}.${month}.${day}`;
+
+            // Gabungkan format: BL-[TANGGAL]-0020-BR007
+            const finalID = `BL-${dateString}-0020-BR007`;
+
+            // 1. Update kolom Input di Editor (Kanan)
+            const inputField = document.getElementById('in-trx-id');
+            if (inputField) {
+                inputField.value = finalID;
+            }
+
+            // 2. Update teks di Preview Nota (Kiri)
+            const previewText = document.getElementById('out-trx-id');
+            if (previewText) {
+                previewText.innerText = finalID;
+            }
+        }
+
+        // Jalankan fungsi ini otomatis saat halaman dibuka
+        window.addEventListener('load', updateTransactionID);
+        // Date
+        function updateTime() {
+            const now = new Date();
+            const str = now.getFullYear() + "-" +
+                String(now.getMonth() + 1).padStart(2, '0') + "-" +
+                String(now.getDate()).padStart(2, '0') + " " +
+                String(now.getHours()).padStart(2, '0') + ":" +
+                String(now.getMinutes()).padStart(2, '0') + ":" +
+                String(now.getSeconds()).padStart(2, '0');
+            const input = document.getElementById('in-trx-date');
+            if (!input.value) { input.value = str; document.getElementById('out-trx-date').innerText = str; }
+            input.addEventListener('input', () => document.getElementById('out-trx-date').innerText = input.value);
+        }
+	window.addEventListener('load', updateTime);
+
+        // Signature
+        const modal = document.getElementById('sigModal');
+        const canvas = document.getElementById('signature-pad');
+        let signaturePad;
+        function resizeCanvas() {
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            canvas.width = canvas.offsetWidth * ratio;
+            canvas.height = canvas.offsetHeight * ratio;
+            canvas.getContext("2d").scale(ratio, ratio);
+        }
+        function openModal() {
+            modal.style.display = 'flex';
+            if (!signaturePad) {
+                signaturePad = new SignaturePad(canvas, { backgroundColor: 'rgba(255,255,255,0)', penColor: 'rgb(0,0,0)', minWidth: 4, maxWidth: 7 });
+                window.addEventListener("resize", resizeCanvas);
+                setTimeout(resizeCanvas, 50);
+            } else { resizeCanvas(); signaturePad.clear(); }
+        }
+        function closeModal() { modal.style.display = 'none'; }
+        function clearPad() { if (signaturePad) signaturePad.clear(); }
+        function saveSignature() {
+            if (!signaturePad.isEmpty()) {
+                document.getElementById('out-sig-img').src = signaturePad.toDataURL("image/png");
+                document.getElementById('out-sig-img').style.display = 'block';
+                closeModal();
+            }
+        }
+
+        // Items
+        let items = [{ qty: "", curr: "AUD", rate: "" }];
+        function fmtQty(n) { return parseFloat(n).toLocaleString('en-US'); }
+        function fmtRate(n) { return parseFloat(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+        function fmtTotal(n) { return parseFloat(n).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }); }
+        function clean(v) { return parseFloat(String(v).replace(/[^0-9.]/g, '')) || 0; }
+
+        function renderItems() {
+            const editor = document.getElementById('editor-items-list');
+            const container = document.getElementById('items-container');
+            editor.innerHTML = ''; container.innerHTML = '';
+            let grandTotal = 0;
+
+            // Daftar Mata Uang untuk Dropdown
+            const currencies = [
+                "AUD", "CAD", "CHF", "EUR", "GBP",
+                "USD B", "USD M", "USD S",
+                "JPY", "MYR", "SGD", "NZD",
+                "BND", "AED", "DKK", "NOK",
+                "SEK", "HKD", "NTY", "PHP",
+                "CNY", "WON", "THB", "SAR"
+            ];
+
+            items.forEach((itm, idx) => {
+                const q = clean(itm.qty);
+                const r = clean(itm.rate);
+                const sub = q * r;
+                grandTotal += sub;
+
+                // --- 1. RENDER PREVIEW (KIRI) ---
+                const row = document.createElement('div');
+                row.className = 'item-row';
+
+                // PERBAIKAN: qty diformat pakai fmtQty() agar ada komanya
+                // Format: 1,000 AUD @ 10,650.00
+                row.innerHTML = `
+                    <div class="item-desc">${fmtQty(q)} ${itm.curr} @ ${fmtRate(r)}</div>
+                    <div class="item-price">${fmtTotal(sub)}</div>
+                `;
+                container.appendChild(row);
+
+                // --- 2. RENDER EDITOR INPUT (KANAN) ---
+                // Membuat opsi dropdown currency
+                let optionsHtml = '';
+                currencies.forEach(c => {
+                    const selected = (c === itm.curr) ? 'selected' : '';
+                    optionsHtml += `<option value="${c}" ${selected}>${c}</option>`;
+                });
+
+                const div = document.createElement('div');
+                div.className = 'item-row-input';
+                div.innerHTML = `
+                    <input class="qty" type="text" value="${itm.qty}" oninput="upd(${idx}, 'qty', this.value)">
+                    
+                    <select class="curr" onchange="upd(${idx}, 'curr', this.value)" style="width:60px;">
+                        ${optionsHtml}
+                    </select>
+                    
+                    <span style="color:#aaa; font-size:10px;">@</span>
+                    
+                    <input class="rate" type="text" value="${itm.rate}" oninput="upd(${idx}, 'rate', this.value)">
+                    
+                    <button class="btn-remove" onclick="del(${idx})">X</button>
+                `;
+                editor.appendChild(div);
+            });
+
+            // Update Total
+            const final = fmtTotal(grandTotal);
+            document.getElementById('out-total').innerText = final;
+            document.getElementById('in-total').value = final;
+        }
+
+        function addItem() { items.push({ qty: "", curr: "AUD", rate: "" }); renderItems(); }
+        function del(i) { items.splice(i, 1); renderItems(); }
+        function upd(idx, key, val) {
+            items[idx][key] = val;
+
+            const row = document.getElementById('items-container').children[idx];
+            if (row) {
+                const itm = items[idx];
+                const q = clean(itm.qty);
+                const r = clean(itm.rate);
+                const sub = q * r;
+
+                // Update text preview real-time dengan format baru
+                // Qty pakai fmtQty, Rate pakai fmtRate
+                row.querySelector('.item-desc').innerText = `${fmtQty(q)} ${itm.curr} @ ${fmtRate(r)}`;
+                row.querySelector('.item-price').innerText = fmtTotal(sub);
+
+                // Hitung ulang Total Bawah
+                let gt = 0;
+                items.forEach(x => gt += (clean(x.qty) * clean(x.rate)));
+                const fgt = fmtTotal(gt);
+                document.getElementById('out-total').innerText = fgt;
+                document.getElementById('in-total').value = fgt;
+            }
+        }
+        renderItems();
+    </script>
+</body>
+
+</html>
